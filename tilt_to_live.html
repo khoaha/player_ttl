@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Tilt to Live - Animatron HTML5 Player Demo</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<script src="../player/vendor/matrix.js" type="text/javascript"></script>
+		<script src="../player/player.js" type="text/javascript"></script>
+		<script src="../player/builder.js" type="text/javascript"></script>
+		<script src="../player/animatron_import.js" type="text/javascript"></script>
+
+		<script type="text/javascript">	
+            function start() {
+                var b = Builder._$, B = Builder, C = anm.C;
+				var width = 640;
+				var height = 480;
+				
+				var mouseX = 0;
+				var mouseY = 0;
+				var targetX = 0;
+				var targetY = 0;
+				
+          		var dot = b().circle([ 0, 0 ], 4).fill('#f00');
+				var swarm = new Array(50);
+					
+                // canvas1
+                var scene1 = b();
+				
+				var area = b().rect([width/2, height/2], [width, height]).fill('#fff');
+				dot.on(C.X_MMOVE, function(evt) {
+					mouseX = evt.pos[0];
+					mouseY = evt.pos[1];
+					return true;
+				}).modify(function(t) {
+					this.x += (mouseX - this.x)/10;
+					this.y += (mouseY - this.y)/10;
+					targetX = this.x;
+					targetY = this.y;
+					return true;
+				});
+				scene1.add(area);
+				for (var i=0; i<swarm.length; i++) {
+					scene1.add(swarm[i] = b().circle([ 0, 0 ], 2).fill('#000')
+							.move([Math.random()*width, Math.random()*height])
+							.modify(function(t) {
+								this.x += (targetX - this.x)/20;
+								this.y += (targetY - this.y)/20;
+								return true;
+					}));
+				}
+				scene1.add(dot);
+				
+                createPlayer('canvas1', {'mode': C.M_DYNAMIC}).load(scene1).play();
+    
+            }
+        </script>
+      </head>
+
+	<body onload="start();">
+		<h1>Tilt to Live - Animatron HTML5 Player Demo</h1>
+
+		<!-- canvas1 -->
+		<canvas id="canvas1"></canvas>
+
+	</body>
+
+</html>
