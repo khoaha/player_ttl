@@ -39,13 +39,18 @@
 				});
 				scene1.add(area);
 				for (var i=0; i<swarm.length; i++) {
-					scene1.add(swarm[i] = b().circle([ 0, 0 ], 2).fill('#000')
-							.move([Math.random()*width, Math.random()*height])
+					swarm[i] = b().circle([ 0, 0 ], 2).fill('#000')
 							.modify(function(t) {
-								this.x += (targetX - this.x)/20;
-								this.y += (targetY - this.y)/20;
+								if (t <= .01) {
+									// initialize position - hacky
+									this.x = Math.random()*width;
+									this.y = Math.random()*height;
+								}
+								this.x += (targetX - this.x > 0 ? 1 : -1) * Math.max(.1, Math.min(Math.atan(t*.1), Math.abs(targetX - this.x)/20));
+								this.y += (targetY - this.y > 0 ? 1 : -1) * Math.max(.1, Math.min(Math.atan(t*.1), Math.abs(targetY - this.y)/20));
 								return true;
-					}));
+					});
+					scene1.add(swarm[i]);
 				}
 				scene1.add(dot);
 				
@@ -59,7 +64,7 @@
 		<h1>Tilt to Live - Animatron HTML5 Player Demo</h1>
 
 		<!-- canvas1 -->
-		<canvas id="canvas1"></canvas>
+		<canvas id="canvas1" width="640" height="480"></canvas>
 
 	</body>
 
