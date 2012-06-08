@@ -14,14 +14,47 @@
 				var width = 640;
 				var height = 480;
 				
+				var numEnemies = 50;
+				var spawn = [4, 16];
+				
 				var mouseX = 0;
 				var mouseY = 0;
 				var targetX = 0;
 				var targetY = 0;
 				
           		var dot = b().circle([ 0, 0 ], 4).fill('#f00');
-				var swarm = new Array(50);
-					
+				var swarm = new Array(numEnemies);
+				var msg = b().paint(function(ctx) {
+      							ctx.font = '30pt sans-serif';
+      							ctx.fillText('Game Over', 300, 200);
+    						});
+				
+				var lastTime = new Array(numEnemies);
+				var spawnTime = new Array(numEnemies);
+				
+				var dotModifier = function(t, i) {
+					// the check for t doesn't make sense
+					if (t < 1000000) {
+						if (t >= spawnTime[i]) {
+							// initialize position
+							this.x = Math.random()*width;
+							this.y = Math.random()*height;
+							
+							// randomize next spawn
+							lastTime[i] = spawnTime[i];
+							spawnTime[i] = t + Math.random()*(spawn[1] - spawn[0]) + spawn[0];
+						}
+						this.x += (targetX - this.x > 0 ? 1 : -1) * Math.max(.1, Math.min(Math.atan(t - lastTime[i]), Math.abs(targetX - this.x)/20));
+						this.y += (targetY - this.y > 0 ? 1 : -1) * Math.max(.1, Math.min(Math.atan(t - lastTime[i]), Math.abs(targetY - this.y)/20));
+						
+						// collision check
+						if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 16) {
+								scene1.v.children[scene1.v.children.length - 1].visible = true;
+						}
+					}
+					return true;
+				};
+				
                 // canvas1
                 var scene1 = b();
 				
@@ -39,20 +72,14 @@
 				});
 				scene1.add(area);
 				for (var i=0; i<swarm.length; i++) {
+					spawnTime[i] = 0;
 					swarm[i] = b().circle([ 0, 0 ], 2).fill('#000')
-							.modify(function(t) {
-								if (t <= .01) {
-									// initialize position - hacky
-									this.x = Math.random()*width;
-									this.y = Math.random()*height;
-								}
-								this.x += (targetX - this.x > 0 ? 1 : -1) * Math.max(.1, Math.min(Math.atan(t*.1), Math.abs(targetX - this.x)/20));
-								this.y += (targetY - this.y > 0 ? 1 : -1) * Math.max(.1, Math.min(Math.atan(t*.1), Math.abs(targetY - this.y)/20));
-								return true;
-					});
+							.modify(dotModifier, i);
 					scene1.add(swarm[i]);
 				}
 				scene1.add(dot);
+				scene1.add(msg);
+				scene1.v.children[scene1.v.children.length - 1].visible = false;
 				
                 createPlayer('canvas1', {'mode': C.M_DYNAMIC}).load(scene1).play();
     
