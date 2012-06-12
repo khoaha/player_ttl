@@ -26,7 +26,7 @@
 				var swarm = new Array(numEnemies);
 				var msg = b().paint(function(ctx) {
       							ctx.font = '30pt sans-serif';
-      							ctx.fillText('Game Over', 300, 200);
+      							ctx.fillText('Game Over', 210, 260);
     						});
 				
 				var lastTime = new Array(numEnemies);
@@ -34,11 +34,12 @@
 				
 				var dotModifier = function(t, i) {
 					// the check for t doesn't make sense
-					if (t < 1000000) {
+					if (t > 1) {
 						if (t >= spawnTime[i]) {
 							// initialize position
 							this.x = Math.random()*width;
 							this.y = Math.random()*height;
+							//console.log(i, this.x, this.y);
 							
 							// randomize next spawn
 							lastTime[i] = spawnTime[i];
