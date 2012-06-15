@@ -4,8 +4,8 @@
 		<title>Tilt to Live - Animatron HTML5 Player Demo</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<script src="../player/vendor/matrix.js" type="text/javascript"></script>
-		<script src="../player/player.js" type="text/javascript"></script>
-		<script src="../player/builder.js" type="text/javascript"></script>
+		<script src="../player/anm.player.js" type="text/javascript"></script>
+		<script src="../player/anm.builder.js" type="text/javascript"></script>
 		<script src="../player/animatron_import.js" type="text/javascript"></script>
 
 		<script type="text/javascript">	
@@ -32,6 +32,42 @@
 				var lastTime = new Array(numEnemies);
 				var spawnTime = new Array(numEnemies);
 				
+				var maxPowerups = 2;
+				var powerRate = .01;
+				var powerSet = [b().circle([ 0, 0 ], 6).fill('#ff0')];
+				var powerups = new Array();
+				var powerType = new Array();
+				
+				// canvas 1
+				var scene1 = b();
+				
+				var baseModifier = function(t) {
+					if (Math.random() <= powerRate) {
+						if (powerups.length < maxPowerups) {
+							var type = Math.floor(Math.random()*powerSet.length);
+							var p = b(powerSet[type]).modify(powerModifier, powerups.length);
+							powerups.push(p);
+							powerType.push(type);
+							scene1.add(p);
+						}
+					}
+				}
+				
+				var powerModifier = function(t, i) {
+					// set position
+					if (this.x == 0 && this.y == 0) {
+						this.x = Math.random()*width;
+						this.y = Math.random()*height;
+					}
+					// collision check
+					if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 81) {
+						console.log("triggered powerup type "+i);
+						scene1.remove(powerups[i]);
+						powerups.splice(i, 1);
+						powerType.splice(i, 1);
+					}
+				}
+				
 				var dotModifier = function(t, i) {
 					// the check for t doesn't make sense
 					if (t > 1) {
@@ -39,7 +75,6 @@
 							// initialize position
 							this.x = Math.random()*width;
 							this.y = Math.random()*height;
-							//console.log(i, this.x, this.y);
 							
 							// randomize next spawn
 							lastTime[i] = spawnTime[i];
@@ -50,26 +85,20 @@
 						
 						// collision check
 						if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 16) {
-								scene1.v.children[scene1.v.children.length - 1].visible = true;
+								msg.enable();
 						}
 					}
-					return true;
 				};
 				
-                // canvas1
-                var scene1 = b();
-				
-				var area = b().rect([width/2, height/2], [width, height]).fill('#fff');
+				var area = b().rect([width/2, height/2], [width, height]).fill('#fff').modify(baseModifier);
 				dot.on(C.X_MMOVE, function(evt) {
 					mouseX = evt.pos[0];
 					mouseY = evt.pos[1];
-					return true;
 				}).modify(function(t) {
 					this.x += (mouseX - this.x)/10;
 					this.y += (mouseY - this.y)/10;
 					targetX = this.x;
 					targetY = this.y;
-					return true;
 				});
 				scene1.add(area);
 				for (var i=0; i<swarm.length; i++) {
@@ -80,7 +109,7 @@
 				}
 				scene1.add(dot);
 				scene1.add(msg);
-				scene1.v.children[scene1.v.children.length - 1].visible = false;
+				msg.disable();
 				
                 createPlayer('canvas1', {'mode': C.M_DYNAMIC}).load(scene1).play();
     
