@@ -34,21 +34,32 @@
 				
 				var maxPowerups = 2;
 				var powerRate = .01;
-				var powerSet = [b().circle([ 0, 0 ], 6).fill('#ff0')];
+				var powerSet = [b().circle([ 0, 0 ], 6).fill('#ff0'), b().circle([ 0, 0 ], 6).fill('#0f0')];
 				var powerups = new Array();
 				var powerType = new Array();
+				// nullify all powerup slots
+				for (var i=0; i<maxPowerups; i++)
+					powerups.push(null);
+					
+				// powerup variables
+				var shield = false;
+				var explode = false;
 				
 				// canvas 1
 				var scene1 = b();
 				
 				var baseModifier = function(t) {
 					if (Math.random() <= powerRate) {
-						if (powerups.length < maxPowerups) {
-							var type = Math.floor(Math.random()*powerSet.length);
-							var p = b(powerSet[type]).modify(powerModifier, powerups.length);
-							powerups.push(p);
-							powerType.push(type);
-							scene1.add(p);
+						var type = Math.floor(Math.random()*powerSet.length);
+						for (var i=0; i<maxPowerups; i++) {
+							if (powerups[i] == null) {
+								var p = b(powerSet[type]).modify(powerModifier, i);
+								powerups[i] = p;
+								powerType[i] = type;
+								scene1.add(p);
+								console.log("created powerup type "+type);
+								break;
+							}
 						}
 					}
 				}
@@ -61,10 +72,14 @@
 					}
 					// collision check
 					if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 81) {
-						console.log("triggered powerup type "+i);
+						console.log("triggered powerup type "+powerType[i]);
 						scene1.remove(powerups[i]);
-						powerups.splice(i, 1);
-						powerType.splice(i, 1);
+						powerups[i] = null;
+						// handle each powerup
+						switch (powerType[i]) {
+							case 0: explode = true; break;
+							case 1: shield = true;
+						}
 					}
 				}
 				
@@ -84,22 +99,41 @@
 						this.y += (targetY - this.y > 0 ? 1 : -1) * Math.max(.1, Math.min(Math.atan(t - lastTime[i]), Math.abs(targetY - this.y)/20));
 						
 						// collision check
-						if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 16) {
-								msg.enable();
+						if (explode) {
+							while ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 6400) {
+								this.x = Math.random()*width;
+								this.y = Math.random()*height;
+							}
+						} else if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 16) {
+								if (shield) {
+									shield = false;
+									spawnTime[i] = 0;
+								} else
+									msg.enable();
 						}
+						if (i == numEnemies-1 && explode)
+							explode = false;
 					}
 				};
+				
+				var playerModifier = function(t) {
+					// update position
+					this.x += (mouseX - this.x)/10;
+					this.y += (mouseY - this.y)/10;
+					targetX = this.x;
+					targetY = this.y;
+					
+					if (shield)
+						this.alpha = .25;
+					else
+						this.alpha = 1;
+				}
 				
 				var area = b().rect([width/2, height/2], [width, height]).fill('#fff').modify(baseModifier);
 				dot.on(C.X_MMOVE, function(evt) {
 					mouseX = evt.pos[0];
 					mouseY = evt.pos[1];
-				}).modify(function(t) {
-					this.x += (mouseX - this.x)/10;
-					this.y += (mouseY - this.y)/10;
-					targetX = this.x;
-					targetY = this.y;
-				});
+				}).modify(playerModifier);
 				scene1.add(area);
 				for (var i=0; i<swarm.length; i++) {
 					spawnTime[i] = 0;
