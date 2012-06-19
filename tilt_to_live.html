@@ -6,6 +6,7 @@
 		<script src="../player/vendor/matrix.js" type="text/javascript"></script>
 		<script src="../player/anm.player.js" type="text/javascript"></script>
 		<script src="../player/anm.builder.js" type="text/javascript"></script>
+        <script src="../player/anm.collisions.js" type="text/javascript"></script>
 		<script src="../player/animatron_import.js" type="text/javascript"></script>
 
 		<script type="text/javascript">	
@@ -64,6 +65,15 @@
 					}
 				}
 				
+				var explodeModifer = function(t) {
+					if (this.sx > 6)
+						scene1.remove(this);
+					else {
+						this.sx *= 1.1;
+						this.sy *= 1.1;
+					}
+				}
+				
 				var powerModifier = function(t, i) {
 					// set position
 					if (this.x == 0 && this.y == 0) {
@@ -71,6 +81,7 @@
 						this.y = Math.random()*height;
 					}
 					// collision check
+					// if (this.$.intersects(dot.v)) {
 					if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 81) {
 						console.log("triggered powerup type "+powerType[i]);
 						scene1.remove(powerups[i]);
@@ -78,12 +89,14 @@
 						// handle each powerup
 						switch (powerType[i]) {
 							case 0: explode = true; break;
+							//case 0: b().circle([ 0, 0 ], 6).fill('#ff0').stroke('#000', 0)
+							//		.modify(explodeModifier);
 							case 1: shield = true;
 						}
 					}
 				}
 				
-				var dotModifier = function(t, i) {
+				var enemyModifier = function(t, i) {
 					// the check for t doesn't make sense
 					if (t > 1) {
 						if (t >= spawnTime[i]) {
@@ -104,6 +117,7 @@
 								this.x = Math.random()*width;
 								this.y = Math.random()*height;
 							}
+						// } else if (this.$.intersects(dot.v)) {
 						} else if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 16) {
 								if (shield) {
 									shield = false;
@@ -124,9 +138,9 @@
 					targetY = this.y;
 					
 					if (shield)
-						this.alpha = .25;
+						dot.stroke('#0f0', 2);
 					else
-						this.alpha = 1;
+						dot.stroke('#000', 1);
 				}
 				
 				var area = b().rect([width/2, height/2], [width, height]).fill('#fff').modify(baseModifier);
@@ -138,7 +152,7 @@
 				for (var i=0; i<swarm.length; i++) {
 					spawnTime[i] = 0;
 					swarm[i] = b().circle([ 0, 0 ], 2).fill('#000')
-							.modify(dotModifier, i);
+							.modify(enemyModifier, i);
 					scene1.add(swarm[i]);
 				}
 				scene1.add(dot);
