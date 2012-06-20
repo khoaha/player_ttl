@@ -15,6 +15,9 @@
 				var width = 640;
 				var height = 480;
 				
+				var points = 0;
+				var time = 0;
+				
 				var numEnemies = 50;
 				var spawn = [4, 16];
 				
@@ -29,6 +32,11 @@
       							ctx.font = '30pt sans-serif';
       							ctx.fillText('Game Over', 210, 260);
     						});
+				var scoreDisp = b().paint(function(ctx) {
+      							ctx.font = '18pt sans-serif';
+      							ctx.fillText(''+Math.floor(time+points), 8, height-8);
+    						});
+							var over = false;
 				
 				var lastTime = new Array(numEnemies);
 				var spawnTime = new Array(numEnemies);
@@ -63,6 +71,9 @@
 							}
 						}
 					}
+					// update time
+					if (!over)
+						time = t;
 				}
 				
 				var explodeModifer = function(t) {
@@ -81,8 +92,8 @@
 						this.y = Math.random()*height;
 					}
 					// collision check
-					// if (this.$.intersects(dot.v)) {
-					if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 81) {
+					if (this.$.intersects(dot.v)) {
+					//if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 81) {
 						console.log("triggered powerup type "+powerType[i]);
 						scene1.remove(powerups[i]);
 						powerups[i] = null;
@@ -93,6 +104,8 @@
 							//		.modify(explodeModifier);
 							case 1: shield = true;
 						}
+						if (!over)
+							points += 30;
 					}
 				}
 				
@@ -113,17 +126,21 @@
 						
 						// collision check
 						if (explode) {
+							if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 6400 && !over)
+								points += 5;
 							while ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 6400) {
 								this.x = Math.random()*width;
 								this.y = Math.random()*height;
 							}
-						// } else if (this.$.intersects(dot.v)) {
-						} else if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 16) {
+						} else if (this.$.intersects(dot.v)) {
+						//} else if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 16) {
 								if (shield) {
 									shield = false;
 									spawnTime[i] = 0;
-								} else
+								} else {
+									over = true;
 									msg.enable();
+								}
 						}
 						if (i == numEnemies-1 && explode)
 							explode = false;
@@ -157,6 +174,7 @@
 				}
 				scene1.add(dot);
 				scene1.add(msg);
+				scene1.add(scoreDisp);
 				msg.disable();
 				
                 createPlayer('canvas1', {'mode': C.M_DYNAMIC}).load(scene1).play();
