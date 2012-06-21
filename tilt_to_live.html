@@ -5,8 +5,8 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<script src="../player/vendor/matrix.js" type="text/javascript"></script>
 		<script src="../player/anm.player.js" type="text/javascript"></script>
-		<script src="../player/anm.builder.js" type="text/javascript"></script>
         <script src="../player/anm.collisions.js" type="text/javascript"></script>
+		<script src="../player/anm.builder.js" type="text/javascript"></script>
 		<script src="../player/animatron_import.js" type="text/javascript"></script>
 
 		<script type="text/javascript">	
@@ -52,7 +52,7 @@
 					
 				// powerup variables
 				var shield = false;
-				var explode = false;
+				var shieldEnd = false;
 				
 				// canvas 1
 				var scene1 = b();
@@ -76,12 +76,23 @@
 						time = t;
 				}
 				
-				var explodeModifer = function(t) {
-					if (this.sx > 6)
-						scene1.remove(this);
+				var explodeModifier = function(t) {
+					// check enemies
+					for (var i=0; i<numEnemies; i++) {
+						if (this.$.intersects(swarm[i].v) && !over)
+							points += 5;
+						while (this.$.intersects(swarm[i].v)) {
+							swarm[i].v.state.x = Math.random()*width;
+							swarm[i].v.state.y = Math.random()*height;
+						}
+					}
+					// grow
+					if (this.sx > 16)
+						scene1.remove(this.$);
 					else {
-						this.sx *= 1.1;
-						this.sy *= 1.1;
+						this.sx *= 1.06;
+						this.sy *= 1.06;
+						this.alpha = (17-this.sx)/16;
 					}
 				}
 				
@@ -93,15 +104,13 @@
 					}
 					// collision check
 					if (this.$.intersects(dot.v)) {
-					//if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 81) {
 						console.log("triggered powerup type "+powerType[i]);
 						scene1.remove(powerups[i]);
 						powerups[i] = null;
 						// handle each powerup
 						switch (powerType[i]) {
-							case 0: explode = true; break;
-							//case 0: b().circle([ 0, 0 ], 6).fill('#ff0').stroke('#000', 0)
-							//		.modify(explodeModifier);
+							case 0: scene1.add(b().circle([ this.x, this.y ], 6).fill('#ff0').nostroke()
+									.modify(explodeModifier)); break;
 							case 1: shield = true;
 						}
 						if (!over)
@@ -125,25 +134,20 @@
 						this.y += (targetY - this.y > 0 ? 1 : -1) * Math.max(.1, Math.min(Math.atan(t - lastTime[i]), Math.abs(targetY - this.y)/20));
 						
 						// collision check
-						if (explode) {
-							if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 6400 && !over)
-								points += 5;
-							while ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 6400) {
-								this.x = Math.random()*width;
-								this.y = Math.random()*height;
+						if (this.$.intersects(dot.v) && t-lastTime[i] >= .5) {
+							if (shield) {
+								shieldEnd = true;
+								spawnTime[i] = 0;
+							} else {
+								over = true;
+								msg.enable();
 							}
-						} else if (this.$.intersects(dot.v)) {
-						//} else if ((this.x - targetX)*(this.x - targetX) + (this.y - targetY)*(this.y - targetY) <= 16) {
-								if (shield) {
-									shield = false;
-									spawnTime[i] = 0;
-								} else {
-									over = true;
-									msg.enable();
-								}
 						}
-						if (i == numEnemies-1 && explode)
-							explode = false;
+					}
+					// end shield for frame
+					if (i == numEnemies-1 && shieldEnd) {
+						shield = false;
+						shieldEnd = false;
 					}
 				};
 				
