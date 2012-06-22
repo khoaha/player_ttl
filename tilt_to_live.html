@@ -18,8 +18,9 @@
 				var points = 0;
 				var time = 0;
 				
-				var numEnemies = 50;
-				var spawn = [4, 16];
+				var numEnemies = 80;
+				var spawnRate = .25;
+				var spawn = [4, 14];
 				
 				var mouseX = 0;
 				var mouseY = 0;
@@ -38,12 +39,12 @@
     						});
 							var over = false;
 				
-				var lastTime = new Array(numEnemies);
+				var spanTime = new Array(numEnemies);
 				var spawnTime = new Array(numEnemies);
 				
-				var maxPowerups = 2;
-				var powerRate = .01;
-				var powerSet = [b().circle([ 0, 0 ], 6).fill('#ff0'), b().circle([ 0, 0 ], 6).fill('#0f0')];
+				var maxPowerups = 3;
+				var powerRate = .007;
+				var powerSet = [b().circle([ 0, 0 ], 6).fill('#ff0'), b().circle([ 0, 0 ], 6).fill('#0f0'), b().circle([ 0, 0 ], 6).fill('#f03')];
 				var powerups = new Array();
 				var powerType = new Array();
 				// nullify all powerup slots
@@ -71,19 +72,62 @@
 							}
 						}
 					}
+					
+					if (Math.random() <= spawnRate) {
+						for (var i=0; i<numEnemies; i++) {
+							if (swarm[i] == null) {
+								swarm[i] = b().circle([ 0, 0 ], 2).fill('#000')
+											.modify(enemyModifier, i);
+								// initialize position
+								swarm[i].v.state.x = Math.random()*width;
+								swarm[i].v.state.y = Math.random()*height;
+								// set spawn variables
+								spanTime[i] = Math.random()*(spawn[1] - spawn[0]) + spawn[0];
+								spawnTime[i] = t;
+								
+								scene1.add(swarm[i]);
+								//swarm[i].v.state.angle;
+							}
+						}
+					}
+					
 					// update time
 					if (!over)
 						time = t;
 				}
 				
+				var beamModifier = function(t, ang) {
+					// check enemies
+					for (var i=0; i<numEnemies; i++) {
+						if (swarm[i] != null) {
+							if (this.$.intersects(swarm[i].v)) {
+								if (!over)
+									points += 7;
+								scene1.remove(swarm[i]);
+								swarm[i] = null;
+							}
+						}
+					}
+					// rotate and move
+					if (this.x <= -24 || this.x >= width+24 || this.y <= -24 || this.y >= height+24)
+						scene1.remove(this.$);
+					else {
+						this.angle = (this.angle + .15) % 6.28;
+						this.x += 3*Math.cos(ang);
+						this.y += 3*Math.sin(ang);
+					}
+				}
+				
 				var explodeModifier = function(t) {
 					// check enemies
 					for (var i=0; i<numEnemies; i++) {
-						if (this.$.intersects(swarm[i].v) && !over)
-							points += 5;
-						while (this.$.intersects(swarm[i].v)) {
-							swarm[i].v.state.x = Math.random()*width;
-							swarm[i].v.state.y = Math.random()*height;
+						if (swarm[i] != null) {
+							if (this.$.intersects(swarm[i].v)) {
+								if (!over)
+									points += 5;
+								scene1.remove(swarm[i]);
+								swarm[i] = null;
+							}
 						}
 					}
 					// grow
@@ -111,7 +155,12 @@
 						switch (powerType[i]) {
 							case 0: scene1.add(b().circle([ this.x, this.y ], 6).fill('#ff0').nostroke()
 									.modify(explodeModifier)); break;
-							case 1: shield = true;
+							case 1: shield = true; break;
+							case 2: var p = b().path([ [-48, 48], [0, -48], [48, 48], [-48, 48] ]).fill('#f03').nostroke()
+									.modify(beamModifier, Math.atan2(this.y - targetY, this.x - targetX));
+									scene1.add(p);
+									p.v.state.x = this.x;
+									p.v.state.y = this.y;
 						}
 						if (!over)
 							points += 30;
@@ -121,27 +170,25 @@
 				var enemyModifier = function(t, i) {
 					// the check for t doesn't make sense
 					if (t > 1) {
-						if (t >= spawnTime[i]) {
-							// initialize position
-							this.x = Math.random()*width;
-							this.y = Math.random()*height;
-							
-							// randomize next spawn
-							lastTime[i] = spawnTime[i];
-							spawnTime[i] = t + Math.random()*(spawn[1] - spawn[0]) + spawn[0];
+						if (t - spawnTime[i] >= spanTime[i]) {
+							scene1.remove(this.$);
+							swarm[i] = null;
 						}
-						this.x += (targetX - this.x > 0 ? 1 : -1) * Math.max(.1, Math.min(Math.atan(t - lastTime[i]), Math.abs(targetX - this.x)/20));
-						this.y += (targetY - this.y > 0 ? 1 : -1) * Math.max(.1, Math.min(Math.atan(t - lastTime[i]), Math.abs(targetY - this.y)/20));
+						
+						var ang = Math.atan2(targetY - this.y, targetX - this.x);
+						this.x += Math.cos(ang) * Math.max(.1, Math.min(Math.atan(t - spawnTime[i]), Math.abs(targetX - this.x)/20));
+						this.y += Math.sin(ang) * Math.max(.1, Math.min(Math.atan(t - spawnTime[i]), Math.abs(targetY - this.y)/20));
 						
 						// collision check
-						if (this.$.intersects(dot.v) && t-lastTime[i] >= .5) {
+						if (this.$.intersects(dot.v) && t-spawnTime[i] >= .5) {
 							if (shield) {
 								shieldEnd = true;
-								spawnTime[i] = 0;
 							} else {
 								over = true;
 								msg.enable();
 							}
+							scene1.remove(this.$);
+							swarm[i] = null;
 						}
 					}
 					// end shield for frame
@@ -170,12 +217,8 @@
 					mouseY = evt.pos[1];
 				}).modify(playerModifier);
 				scene1.add(area);
-				for (var i=0; i<swarm.length; i++) {
-					spawnTime[i] = 0;
-					swarm[i] = b().circle([ 0, 0 ], 2).fill('#000')
-							.modify(enemyModifier, i);
-					scene1.add(swarm[i]);
-				}
+				for (var i=0; i<swarm.length; i++)
+					swarm[i] = null;
 				scene1.add(dot);
 				scene1.add(msg);
 				scene1.add(scoreDisp);
