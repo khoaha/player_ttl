@@ -59,41 +59,43 @@
 				var scene1 = b();
 				
 				var baseModifier = function(t) {
-					if (Math.random() <= powerRate) {
-						var type = Math.floor(Math.random()*powerSet.length);
-						for (var i=0; i<maxPowerups; i++) {
-							if (powerups[i] == null) {
-								var p = b(powerSet[type]).modify(powerModifier, i);
-								powerups[i] = p;
-								powerType[i] = type;
-								scene1.add(p);
-								console.log("created powerup type "+type);
-								break;
+					if (t > 3) {
+						if (Math.random() <= powerRate) {
+							var type = Math.floor(Math.random()*powerSet.length);
+							for (var i=0; i<maxPowerups; i++) {
+								if (powerups[i] == null) {
+									var p = b(powerSet[type]).modify(powerModifier, i);
+									powerups[i] = p;
+									powerType[i] = type;
+									scene1.add(p);
+									console.log("created powerup type "+type);
+									break;
+								}
 							}
 						}
-					}
-					
-					if (Math.random() <= spawnRate) {
-						for (var i=0; i<numEnemies; i++) {
-							if (swarm[i] == null) {
-								swarm[i] = b().circle([ 0, 0 ], 2).fill('#000')
-											.modify(enemyModifier, i);
-								// initialize position
-								swarm[i].v.state.x = Math.random()*width;
-								swarm[i].v.state.y = Math.random()*height;
-								// set spawn variables
-								spanTime[i] = Math.random()*(spawn[1] - spawn[0]) + spawn[0];
-								spawnTime[i] = t;
-								
-								scene1.add(swarm[i]);
-								//swarm[i].v.state.angle;
+						
+						if (Math.random() <= spawnRate) {
+							for (var i=0; i<numEnemies; i++) {
+								if (swarm[i] == null) {
+									swarm[i] = b().circle([ 0, 0 ], 2).fill('#000')
+												.modify(enemyModifier, i);
+									// initialize position
+									swarm[i].v.state.x = Math.random()*width;
+									swarm[i].v.state.y = Math.random()*height;
+									// set spawn variables
+									spanTime[i] = Math.random()*(spawn[1] - spawn[0]) + spawn[0];
+									spawnTime[i] = t;
+									
+									scene1.add(swarm[i]);
+									break;
+								}
 							}
 						}
+						
+						// update time
+						if (!over)
+							time = t;
 					}
-					
-					// update time
-					if (!over)
-						time = t;
 				}
 				
 				var beamModifier = function(t, ang) {
@@ -156,7 +158,7 @@
 							case 0: scene1.add(b().circle([ this.x, this.y ], 6).fill('#ff0').nostroke()
 									.modify(explodeModifier)); break;
 							case 1: shield = true; break;
-							case 2: var p = b().path([ [-48, 48], [0, -48], [48, 48], [-48, 48] ]).fill('#f03').nostroke()
+							case 2: var p = b().path([ [-56, 32], [0, -64], [56, 32], [-56, 32] ]).fill('#f03').nostroke()
 									.modify(beamModifier, Math.atan2(this.y - targetY, this.x - targetX));
 									scene1.add(p);
 									p.v.state.x = this.x;
@@ -168,28 +170,25 @@
 				}
 				
 				var enemyModifier = function(t, i) {
-					// the check for t doesn't make sense
-					if (t > 1) {
-						if (t - spawnTime[i] >= spanTime[i]) {
-							scene1.remove(this.$);
-							swarm[i] = null;
+					if (t - spawnTime[i] >= spanTime[i]) {
+						scene1.remove(this.$);
+						swarm[i] = null;
+					}
+					
+					var ang = Math.atan2(targetY - this.y, targetX - this.x);
+					this.x += Math.cos(ang) * Math.max(.1, Math.min(Math.atan(t - spawnTime[i]), Math.abs(targetX - this.x)/20));
+					this.y += Math.sin(ang) * Math.max(.1, Math.min(Math.atan(t - spawnTime[i]), Math.abs(targetY - this.y)/20));
+					
+					// collision check
+					if (this.$.intersects(dot.v) && t-spawnTime[i] >= .5) {
+						if (shield) {
+							shieldEnd = true;
+						} else {
+							over = true;
+							msg.enable();
 						}
-						
-						var ang = Math.atan2(targetY - this.y, targetX - this.x);
-						this.x += Math.cos(ang) * Math.max(.1, Math.min(Math.atan(t - spawnTime[i]), Math.abs(targetX - this.x)/20));
-						this.y += Math.sin(ang) * Math.max(.1, Math.min(Math.atan(t - spawnTime[i]), Math.abs(targetY - this.y)/20));
-						
-						// collision check
-						if (this.$.intersects(dot.v) && t-spawnTime[i] >= .5) {
-							if (shield) {
-								shieldEnd = true;
-							} else {
-								over = true;
-								msg.enable();
-							}
-							scene1.remove(this.$);
-							swarm[i] = null;
-						}
+						scene1.remove(this.$);
+						swarm[i] = null;
 					}
 					// end shield for frame
 					if (i == numEnemies-1 && shieldEnd) {
