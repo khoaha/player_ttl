@@ -58,6 +58,20 @@
 				// canvas 1
 				var scene1 = b();
 				
+				var reset = function() {
+					builder.time = 0;
+					points = 0;
+					for (var c in area.v.children)
+						area.remove(c);
+					for (var i=0; i<maxPowerups; i++) {
+						powerups[i] = null;
+						powerType[i] = null;
+					}
+					for (var i=0; i<swarm.length; i++)
+						swarm[i] = null;
+					over = false;
+				}
+				
 				var baseModifier = function(t) {
 					if (t > 3) {
 						if (Math.random() <= powerRate) {
@@ -212,9 +226,13 @@
 				
 				var area = b().rect([width/2, height/2], [width, height]).fill('#fff').modify(baseModifier);
 				dot.on(C.X_MMOVE, function(evt) {
-					mouseX = evt.pos[0];
-					mouseY = evt.pos[1];
-				}).modify(playerModifier);
+						mouseX = evt.pos[0];
+						mouseY = evt.pos[1];
+					}).on(C.X_KPRESS, function(evt) {
+						if (over)
+							reset();
+					})
+					.modify(playerModifier);
 				scene1.add(area);
 				for (var i=0; i<swarm.length; i++)
 					swarm[i] = null;
