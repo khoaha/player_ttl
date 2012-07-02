@@ -59,10 +59,10 @@
 				var scene1 = b();
 				
 				var reset = function() {
-					builder.time = 0;
+					b.time = 0;
 					points = 0;
-					for (var c in area.v.children)
-						area.remove(c);
+					for (var c in scene1.v.children)
+						scene1.remove(c);
 					for (var i=0; i<maxPowerups; i++) {
 						powerups[i] = null;
 						powerType[i] = null;
@@ -229,6 +229,7 @@
 						mouseX = evt.pos[0];
 						mouseY = evt.pos[1];
 					}).on(C.X_KPRESS, function(evt) {
+						console.log(evt.key, evt.char);
 						if (over)
 							reset();
 					})
