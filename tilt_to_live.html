@@ -59,10 +59,16 @@
 				var scene1 = b();
 				
 				var reset = function() {
+					console.log("reset");
 					b.time = 0;
+					time = 0;
 					points = 0;
-					for (var c in scene1.v.children)
-						scene1.remove(c);
+					scene1.deach(function(elm) {
+						if (elm != scoreDisp.v && elm != dot.v && elm != area.v && elm != msg.v) {
+  							scene1.remove(elm);
+						}
+   					});
+					msg.disable();
 					for (var i=0; i<maxPowerups; i++) {
 						powerups[i] = null;
 						powerType[i] = null;
