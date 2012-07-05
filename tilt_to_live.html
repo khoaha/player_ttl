@@ -60,7 +60,6 @@
 				
 				var reset = function() {
 					console.log("reset");
-					b.time = 0;
 					time = 0;
 					points = 0;
 					scene1.deach(function(elm) {
@@ -236,8 +235,10 @@
 						mouseY = evt.pos[1];
 					}).on(C.X_KPRESS, function(evt) {
 						console.log(evt.key, evt.char);
-						if (over)
+						if (over) {
+							this.t = 0;
 							reset();
+						}
 					})
 					.modify(playerModifier);
 				scene1.add(area);
