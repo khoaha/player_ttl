@@ -233,12 +233,6 @@
 				dot.on(C.X_MMOVE, function(evt) {
 						mouseX = evt.pos[0];
 						mouseY = evt.pos[1];
-					}).on(C.X_KPRESS, function(evt) {
-						console.log(evt.key, evt.char);
-						if (over) {
-							this.t = 0;
-							reset();
-						}
 					})
 					.modify(playerModifier);
 				scene1.add(area);
@@ -247,6 +241,13 @@
 				scene1.add(dot);
 				scene1.add(msg);
 				scene1.add(scoreDisp);
+				scene1.on(C.X_KPRESS, function(evt) {
+						console.log(evt.key, evt.char);
+						if (over) {
+							this.t = 0;
+							reset();
+						}
+					})
 				msg.disable();
 				
                 createPlayer('canvas1', {'mode': C.M_DYNAMIC}).load(scene1).play();
