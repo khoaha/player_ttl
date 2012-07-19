@@ -17,6 +17,7 @@
 				
 				var points = 0;
 				var time = 0;
+				var baseTime = 0;
 				
 				var numEnemies = 80;
 				var spawnRate = .25;
@@ -29,6 +30,24 @@
 				
           		var dot = b().circle([ 0, 0 ], 4).fill('#f00');
 				var swarm = new Array(numEnemies);
+				
+				var instruct = b().paint(function(ctx) {
+								ctx.font = '30pt sans-serif';
+								ctx.fillText('Tilt & Survive', 200, 40);
+								ctx.font = '18pt sans-serif';
+      							ctx.fillText('Instructions:', 8, 80);
+								ctx.fillText('Maneuver to avoid the swarm and collect powerups!', 16, 110);
+								ctx.fillText('Controls:', 8, 140);
+								ctx.fillText('Move mouse to steer dot', 16, 170);
+								ctx.fillText('Powerups:', 8, 200);
+								ctx.fillText('Green - Shields one hit', 16, 230);
+								ctx.fillText('Red - Fires projectile in front', 16, 260);
+								ctx.fillText('Yellow - Creates explosion at center', 16, 290);
+							});
+				var next = b().paint(function(ctx) {
+								ctx.font = '18pt sans-serif';
+								ctx.fillText('Press any key to continue', 180, 400);
+							});
 				var msg = b().paint(function(ctx) {
       							ctx.font = '30pt sans-serif';
       							ctx.fillText('Game Over', 210, 260);
@@ -37,7 +56,9 @@
       							ctx.font = '18pt sans-serif';
       							ctx.fillText(''+Math.floor(time+points), 8, height-8);
     						});
-							var over = false;
+				
+				var started = false;
+				var over = false;
 				
 				var spanTime = new Array(numEnemies);
 				var spawnTime = new Array(numEnemies);
@@ -60,7 +81,6 @@
 				
 				var reset = function() {
 					console.log("reset");
-					time = 0;
 					points = 0;
 					scene1.deach(function(elm) {
 						if (elm != scoreDisp.v && elm != dot.v && elm != area.v && elm != msg.v) {
@@ -78,7 +98,13 @@
 				}
 				
 				var baseModifier = function(t) {
-					if (t > 3) {
+					// update time
+					if (!over)
+						time = t - baseTime;
+					else
+						baseTime = t;
+					
+					if (time > 3) {
 						if (Math.random() <= powerRate) {
 							var type = Math.floor(Math.random()*powerSet.length);
 							for (var i=0; i<maxPowerups; i++) {
@@ -110,10 +136,6 @@
 								}
 							}
 						}
-						
-						// update time
-						if (!over)
-							time = t;
 					}
 				}
 				
@@ -205,6 +227,7 @@
 						} else {
 							over = true;
 							msg.enable();
+							next.enable();
 						}
 						scene1.remove(this.$);
 						swarm[i] = null;
@@ -236,17 +259,26 @@
 					})
 					.modify(playerModifier);
 				scene1.add(area);
-				for (var i=0; i<swarm.length; i++)
-					swarm[i] = null;
-				scene1.add(dot);
-				scene1.add(msg);
-				scene1.add(scoreDisp);
+				scene1.add(instruct);
+				scene1.add(next);
+				
+				var init = function() {
+					started = true;
+					for (var i=0; i<swarm.length; i++)
+						swarm[i] = null;
+					scene1.add(dot);
+					scene1.add(msg);
+					scene1.add(scoreDisp);
+					instruct.disable();
+					next.disable();
+				}
+						
 				scene1.on(C.X_KPRESS, function(evt) {
 						console.log(evt.key, evt.char);
-						if (over) {
-							this.t = 0;
+						if (!started)
+							init();
+						else if (over)
 							reset();
-						}
 					})
 				msg.disable();
 				
